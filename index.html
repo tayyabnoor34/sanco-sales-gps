@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SANCO - Sales Visit GPS</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 24px 16px;
+  font-family: Arial, sans-serif;
+  background: #f3f6fa;
+  color: #202b3c;
+}
+.container {
+  max-width: 480px;
+  margin: 20px auto;
+  background: white;
+  padding: 28px 22px;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px #00000012;
+  text-align: center;
+}
+.logo {
+  color: #168bb8;
+  font-size: 30px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+h2 { margin-bottom: 8px; }
+p { color: #64748b; line-height: 1.5; }
+button {
+  width: 100%;
+  padding: 15px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #087eae;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:disabled { opacity: .6; }
+.secondary { background: #263b52; }
+#result {
+  display: none;
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #eef6fa;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.item { margin: 12px 0; }
+.item strong { display: block; margin-bottom: 5px; }
+a { color: #087eae; }
+#status { margin-top: 16px; font-size: 14px; }
+.footer { margin-top: 24px; font-size: 12px; color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">SANCO</div>
+  <h2>Sales Visit GPS Capture</h2>
+  <p>Use this page when you are physically at the customer location.</p>
+
+  <button id="capture" onclick="captureGPS()">Capture My Location</button>
+  <div id="status">Please allow location access when prompted.</div>
+
+  <div id="result">
+    <div class="item"><strong>Latitude / Longitude</strong><span id="coordinates"></span></div>
+    <div class="item"><strong>GPS Accuracy</strong><span id="accuracy"></span></div>
+    <div class="item"><strong>Capture Date & Time</strong><span id="captured"></span></div>
+    <div class="item"><strong>Google Maps Location</strong><a id="map" target="_blank" rel="noopener">Open location in Google Maps</a></div>
+    <button onclick="copyDetails()">Copy Visit Details</button>
+  </div>
+
+  <div class="footer">SANCO Company | Sales Visit Verification</div>
+</div>
+
+<script>
+let visitDetails = "";
+
+function captureGPS() {
+  const status = document.getElementById("status");
+  const button = document.getElementById("capture");
+  const result = document.getElementById("result");
+
+  result.style.display = "none";
+
+  if (!navigator.geolocation) {
+    status.textContent = "GPS is not supported by this browser.";
+    return;
+  }
+
+  button.disabled = true;
+  status.textContent = "Obtaining your GPS location. Please wait...";
+
+  navigator.geolocation.getCurrentPosition(
+    function(position) {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      const accuracy = Math.round(position.coords.accuracy);
+      const date = new Date().toLocaleString();
+
+      const mapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+
+      document.getElementById("coordinates").textContent =
+        `${lat}, ${lon}`;
+      document.getElementById("accuracy").textContent =
+        `± ${accuracy} meters`;
+      document.getElementById("captured").textContent = date;
+
+      const map = document.getElementById("map");
+      map.href = mapUrl;
+
+      visitDetails =
+        `SANCO Sales Visit GPS\n` +
+        `Latitude: ${lat}\n` +
+        `Longitude: ${lon}\n` +
+        `Accuracy: ±${accuracy} meters\n` +
+        `Date & Time: ${date}\n` +
+        `Google Maps: ${mapUrl}`;
+
+      result.style.display = "block";
+      status.textContent = "Location captured successfully.";
+      button.disabled = false;
+    },
+    function(error) {
+      const messages = {
+        1: "Location permission denied. Please allow location access in Chrome.",
+        2: "Your location is unavailable. Check your phone's GPS.",
+        3: "Location request timed out. Please try again."
+      };
+      status.textContent = messages[error.code] || "Unable to capture location.";
+      button.disabled = false;
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 30000,
+      maximumAge: 0
+    }
+  );
+}
+
+async function copyDetails() {
+  try {
+    await navigator.clipboard.writeText(visitDetails);
+    alert("Visit details copied. You can now paste them into the SANCO Google Form.");
+  } catch (error) {
+    alert("Copy failed. Please select and copy the details manually.");
+  }
+}
+</script>
+</body>
+</html>
